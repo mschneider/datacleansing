@@ -38,8 +38,8 @@ class Row:
 	def compareTo(self, other):
 		return \
 				rateMatchOrNone(self.culture, other.culture) + \
-				rateMatchOrNone(self.sex, other.sex) + \
-				rateMatchOrNone(self.age, other.age) + \
+				rateWhitelisted(self.sex, other.sex, ['m', 'f']) + \
+				rateWhitelisted(self.age, other.age, ['20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38']) + \
 				rateEdit(self.birthday, other.birthday) + \
 				rateMatchOrNone(self.title, other.title) + \
 				rateEdit(self.name, other.name) + \
@@ -65,6 +65,32 @@ def rateMatchOrNone(a, b):
 	else:
 		return 0.0
 
+def rateWhitelisted(a, b, whitelist):
+	if a in whitelist and b in whitelist:
+		if a == b:
+			return 1.0
+		else:
+			return 0.0
+	else:
+		return 0.5
+
+def rateDate(a, b):
+	valid_date = re.compile('^19[0-9]{6}$')
+	a_is_valid = valid_date.match(a)
+	b_is_valid = valid_date.match(b)
+	if a_is_valid and b_is_valid:
+		if a == b:
+			return 1.0
+		else:
+			return 0.0
+	else:
+		distance(a, b)
+
+def distance(a,b):
+	lev = jellyfish.levenshtein_distance(a,b)
+	return max(1.0 - lev * 0.4, 0.0)
+
+
 def rateEdit(a, b):
 	ignored = [None, "", "_", " "]
 	a_ignored = a in ignored
@@ -73,8 +99,8 @@ def rateEdit(a, b):
 		return 1.0
 	elif a_ignored or b_ignored:
 		return 0.5
-	lev = jellyfish.levenshtein_distance(a,b)
-	return max(1.0 - lev * 0.4, 0.0)
+	return distance(a,b)
+
 
 input = sys.argv[1]
 
@@ -88,18 +114,19 @@ if len(sys.argv) == 4:
 	threshold = float(sys.argv[2])
 	output = sys.argv[3]
 	results = []
+	rows.sort(key = lambda row: row.phone)
 	for index, row in enumerate(rows):
 		if index % 1000 == 0:
 			print "" + output + ">", index
-		for other in rows[index+1:]:
+		for other in rows[index+1:index+11]:
 			if row.compareTo(other) > threshold:
 				print "found:", len(results)
 				print str(row)
 				print str(other)
 				results += [[row.id, other.id]]
-				if len(results) % 10 == 0:
+				if len(results) % 1000 == 0:
 					write_tsv(output, results)
-	write_tsv(ouptut, results)
+	write_tsv(output, results)
 elif len(sys.argv) == 5:
 	a, b = map(int, sys.argv[3:5])
 	print rows[a]
