@@ -31,26 +31,26 @@ class Row:
 
 	def __str__(self):
 		return "id:" + self.id + "\tc:" + self.culture + "\ts:" + self.sex + "\ta:" + self.age + \
-			"\tbd:" + self.birthday + "\tt:" + self.title + "\tn:" + self.name + "\tsn:" + self.surname + \
-			"\tst:" + self.state + "\tsb:" + self.suburb + "\tp:" + self.post + "\ts:" + self.street + \
-			"\ta1:" + self.address1 + "\ta2" + self.address2 + "\tph" + self.phone
+				"\tbd:" + self.birthday + "\tt:" + self.title + "\tn:" + self.name + "\tsn:" + self.surname + \
+				"\tst:" + self.state + "\tsb:" + self.suburb + "\tp:" + self.post + "\ts:" + self.street + \
+				"\ta1:" + self.address1 + "\ta2" + self.address2 + "\tph" + self.phone
 
 	def compareTo(self, other):
 		return \
-			rateMatchOrNone(self.culture, other.culture) + \
-			rateMatchOrNone(self.sex, other.sex) + \
-			rateMatchOrNone(self.age, other.age) + \
-			rateEdit(self.birthday, other.birthday) + \
-			rateMatchOrNone(self.title, other.title) + \
-			rateEdit(self.name, other.name) + \
-			rateEdit(self.surname, other.surname) + \
-			rateMatchOrNone(self.state, other.state) + \
-			rateEdit(self.suburb, other.suburb) + \
-			rateEdit(self.post, other.post) + \
-			rateMatchOrNone(self.street, other.street) + \
-			rateEdit(self.address1, other.address1) + \
-			rateEdit(self.address2, other.address2) + \
-			rateEdit(self.phone, other.phone)
+				rateMatchOrNone(self.culture, other.culture) + \
+				rateMatchOrNone(self.sex, other.sex) + \
+				rateMatchOrNone(self.age, other.age) + \
+				rateEdit(self.birthday, other.birthday) + \
+				rateMatchOrNone(self.title, other.title) + \
+				rateEdit(self.name, other.name) + \
+				rateEdit(self.surname, other.surname) + \
+				rateMatchOrNone(self.state, other.state) + \
+				rateEdit(self.suburb, other.suburb) + \
+				rateEdit(self.post, other.post) + \
+				rateMatchOrNone(self.street, other.street) + \
+				rateEdit(self.address1, other.address1) + \
+				rateEdit(self.address2, other.address2) + \
+				rateEdit(self.phone, other.phone)
 
 def rateMatchOrNone(a, b):
 	ignored = [None, "", "_", " "]
@@ -77,8 +77,6 @@ def rateEdit(a, b):
 	return max(1.0 - lev * 0.4, 0.0)
 
 input = sys.argv[1]
-threshold = float(sys.argv[2])
-output = sys.argv[3]
 
 rows = []
 for index, r in enumerate(open_tsv(input)):
@@ -86,20 +84,29 @@ for index, r in enumerate(open_tsv(input)):
 	if index > 99999:
 		break
 
-results = []
-for index, row in enumerate(rows):
-	if index % 1000 == 0:
-		print "" + output + ">", index
-	for other in rows[index+1:]:
-		if row.compareTo(other) > threshold:
-			print "found:", len(results)
-			print str(row)
-			print str(other)
-			results += [[row.id, other.id]]
-			if len(results) % 10 == 0:
-				write_tsv(output, results)
+if len(sys.argv) == 4:
+	threshold = float(sys.argv[2])
+	output = sys.argv[3]
+	results = []
+	for index, row in enumerate(rows):
+		if index % 1000 == 0:
+			print "" + output + ">", index
+		for other in rows[index+1:]:
+			if row.compareTo(other) > threshold:
+				print "found:", len(results)
+				print str(row)
+				print str(other)
+				results += [[row.id, other.id]]
+				if len(results) % 10 == 0:
+					write_tsv(output, results)
+	write_tsv(ouptut, results)
+elif len(sys.argv) == 5:
+	a, b = map(int, sys.argv[3:5])
+	print rows[a]
+	print rows[b]
+	print rows[a].compareTo(rows[b])
 
-write_tsv(ouptut, results)
+
 
 
 
