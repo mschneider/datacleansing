@@ -108,28 +108,23 @@ for index, r in enumerate(open_tsv(input)):
 	if index > 99999:
 		break
 
-if len(sys.argv) == 4:
-	threshold = float(sys.argv[2])
-	output = sys.argv[3]
-	results = []
-	rows.sort(key = lambda row: row.phone)
-	for index, row in enumerate(rows):
-		if index % 1000 == 0:
-			print "" + output + ">", index
-		for other in rows[index+1:index+11]:
-			if row.compareTo(other) > threshold:
-				print "found:", len(results)
-				print str(row)
-				print str(other)
-				results += [[row.id, other.id]]
-				if len(results) % 1000 == 0:
-					write_tsv(output, results)
-	write_tsv(output, results)
-elif len(sys.argv) == 5:
-	a, b = map(int, sys.argv[3:5])
-	print rows[a]
-	print rows[b]
-	print rows[a].compareTo(rows[b])
+threshold = float(sys.argv[2])
+output = sys.argv[3]
+results = []
+rows.sort(key = lambda row: row.phone)
+for index, row in enumerate(rows):
+	if index % 1000 == 0:
+		print "" + output + ">", index
+	for other in rows[index+1:index+11]:
+		if row.compareTo(other) > threshold:
+			print "found:", len(results)
+			print str(row)
+			print str(other)
+			results += [[row.id, other.id]]
+			if len(results) % 1000 == 0:
+				write_tsv(output, results)
+write_tsv(output, results)
+
 
 
 
