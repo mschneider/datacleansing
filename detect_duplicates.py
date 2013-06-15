@@ -87,9 +87,7 @@ def rateDate(a, b):
 		distance(a, b)
 
 def distance(a,b):
-	lev = jellyfish.levenshtein_distance(a,b)
-	return max(1.0 - lev * 0.4, 0.0)
-
+	return 1.0 - float(jellyfish.damerau_levenshtein_distance(a, b)) / max(len(a), len(b))
 
 def rateEdit(a, b):
 	ignored = [None, "", "_", " "]
