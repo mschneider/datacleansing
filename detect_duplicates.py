@@ -104,6 +104,11 @@ def rateDate(a, b):
 	else:
 		return distance(a, b)
 
+#Example Code for NGRAMM
+#ng=ngram.NGram(pad_len=1,N=2)
+#list(ng.ngrams(ng.pad("Tester"))
+#>> ['$T', 'Te', 'es', 'st', 'te', 'er', 'r$']
+
 def distance(a,b):
 	similaritycalc = {
 	        	1: lambda a,b:  1.0 - float(jellyfish.jaro_winkler(a, b)) / max(len(a), len(b)),
