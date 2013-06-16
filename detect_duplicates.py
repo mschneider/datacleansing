@@ -1,6 +1,16 @@
 import sys, re
 import csv
 import jellyfish
+import ngram
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument("filename", help="Name of File that get checked for duplicates")
+parser.add_argument("threshold",type=int, help="Threshold value counts as duplicate.")
+parser.add_argument("output", help="Name of Outputfile")
+parser.add_argument("-si", "--similarity",type=int,help="Select Simmilarity Measure used. 1= Jaro Winkler,2=Hamming Distance,3=Damerau Levenshtein", choices=[1,2,3])
+args = parser.parse_args()
+
 
 def open_tsv(filename):
 	return csv.reader(open(filename, "r"), delimiter='\t')
@@ -39,19 +49,18 @@ class Row:
 		return \
 				rateMatchOrNone(self.culture, other.culture) + \
 				rateWhitelisted(self.sex, other.sex, ['m', 'f']) + \
-				rateWhitelisted(self.age, other.age, ['20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38']) + \
-				rateEdit(self.birthday, other.birthday) + \
+				rateWhitelisted(self.age, other.age, ['20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','43','44']) + \
+				rateEdit(repairstring(self.birthday,8),repairstring(other.birthday,8)) + \
 				rateMatchOrNone(self.title, other.title) + \
 				rateEdit(self.name, other.name) + \
 				rateEdit(self.surname, other.surname) + \
 				rateMatchOrNone(self.state, other.state) + \
 				rateEdit(self.suburb, other.suburb) + \
-				rateEdit(self.post, other.post) + \
+				rateEdit(repairstring(self.post,4),repairstring(other.post,4)) + \
 				rateMatchOrNone(self.street, other.street) + \
 				rateEdit(self.address1, other.address1) + \
 				rateEdit(self.address2, other.address2) + \
 				rateEdit(self.phone, other.phone)
-
 def rateMatchOrNone(a, b):
 	ignored = [None, "", "_", " "]
 	a_ignored = a in ignored
@@ -67,13 +76,22 @@ def rateMatchOrNone(a, b):
 
 def rateWhitelisted(a, b, whitelist):
 	if a in whitelist and b in whitelist:
-		if a == b:
+		if a.strip() == b.strip():
 			return 1.0
 		else:
 			return 0.0
 	else:
 		return 0.5
-
+		
+def repairstring(a,deflen):
+		a=a.strip()
+		if len(a) - a.count(' ')== deflen:
+			a = a.replace(" ","")
+			return a
+		else:
+			return a
+			
+		
 def rateDate(a, b):
 	valid_date = re.compile('^19[0-9]{6}$')
 	a_is_valid = valid_date.match(a)
@@ -84,10 +102,17 @@ def rateDate(a, b):
 		else:
 			return 0.0
 	else:
-		distance(a, b)
+		return distance(a, b)
 
 def distance(a,b):
-	return 1.0 - float(jellyfish.damerau_levenshtein_distance(a, b)) / max(len(a), len(b))
+	similaritycalc = {
+	        	1: lambda a,b:  1.0 - float(jellyfish.jaro_winkler(a, b)) / max(len(a), len(b)),
+				2: lambda a,b:  1.0 - float(jellyfish.hamming_distance(a, b)) / max(len(a), len(b)),
+				3:lambda a,b:  1.0 - float(jellyfish.damerau_levenshtein_distance(a, b)) / max(len(a), len(b)),
+				None:lambda a,b:  1.0 - float(jellyfish.damerau_levenshtein_distance(a, b)) / max(len(a), len(b))
+				}
+		
+	return similaritycalc[args.similarity](a,b)
 
 def rateEdit(a, b):
 	ignored = [None, "", "_", " "]
@@ -100,7 +125,7 @@ def rateEdit(a, b):
 	return distance(a,b)
 
 
-input = sys.argv[1]
+input = args.filename
 
 rows = []
 for index, r in enumerate(open_tsv(input)):
@@ -108,8 +133,8 @@ for index, r in enumerate(open_tsv(input)):
 	if index > 99999:
 		break
 
-threshold = float(sys.argv[2])
-output = sys.argv[3]
+threshold = float(args.threshold)
+output = args.output
 results = []
 rows.sort(key = lambda row: row.phone)
 for index, row in enumerate(rows):
