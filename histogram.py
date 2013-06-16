@@ -16,7 +16,7 @@ for row in tsv_file:
 	occurences[key] += 1
 
 for key in occurences:
-	print str(occurences[key]) + "," + key
+	print str(occurences[key]) + "," + key + "," + str(len(key))
 
 
 
