@@ -9,11 +9,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument("filename", help="Name of File that get checked for duplicates")
 parser.add_argument("threshold",type=int, help="Threshold value counts as duplicate.")
 parser.add_argument("output", help="Name of Outputfile")
-parser.add_argument("-s", "--similarity",type=string,help="Select Simmilarity Measure used. 1= Jaro Winkler,2=Hamming Distance,3=Damerau Levenshtein",default="damreau_levenshtein" , choices=["jaro_winckler","hamming_distance","damreau_levenshtein"])
-parser.add_argument("-m","--mean",type=string, help="Select Mean Calculation", default="arithmetic_mean",choices=["arithmetic_mean","arithmeticWeightedMean","geometricMean","geometricWeightedMean"])
+parser.add_argument("-s", "--similarity",type=str,help="Select Simmilarity Measure used. 1= Jaro Winkler,2=Hamming Distance,3=Damerau Levenshtein",default="damreau_levenshtein" , choices=["jaro_winckler","hamming_distance","damreau_levenshtein"])
+parser.add_argument("-m","--mean",type=str, help="Select Mean Calculation", default="arithmetic_mean",choices=["arithmetic_mean","arithmeticWeightedMean","geometricMean","geometricWeightedMean"])
 args = parser.parse_args()
-
-
 
 def arithmeticMean (similarities,weights):
 	return float(sum(similarities))/len(similarities)
@@ -139,15 +137,12 @@ def rateDate(a, b):
 		else:
 			return 0.0
 	else:
-		return distance(a, b)
+		return similarity(a, b)
 
 #Example Code for NGRAMM
 #ng=ngram.NGram(pad_len=1,N=2)
 #list(ng.ngrams(ng.pad("Tester"))
 #>> ['$T', 'Te', 'es', 'st', 'te', 'er', 'r$']
-
-def distance(a,b):
-	return similarityCalc(a,b)
 
 def rateEdit(a, b):
 	ignored = [None, "", "_", " "]
@@ -157,7 +152,7 @@ def rateEdit(a, b):
 		return 1.0
 	elif a_ignored or b_ignored:
 		return 0.5
-	return distance(a,b)
+	return similarity(a,b)
 
 
 input = args.filename
