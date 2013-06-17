@@ -1,7 +1,7 @@
 a, b = *ARGV
 
 def true_positives(filename)
-  `python compare_results.py #{filename} results.sample.tsv | tail -n +7` \
+  `python compare_results.py #{filename} results.sample.tsv | tail -n +10` \
     .lines.map(&:strip).map { |line| line.split(' <-> ').map(&:to_i) }
 end
 

@@ -2,3 +2,5 @@ results
 *.tsv
 *.csv
 build
+*.egg-info
+

@@ -58,10 +58,13 @@ print "gold_standard | min:", gold_standard.minimum, " max:", gold_standard.maxi
 false_positives = gold_standard.difference_to(result).count()
 false_negatives = result.difference_to(gold_standard).count()
 true_positives = result.intersect(gold_standard).count()
-print "fp:", false_positives, "fn:", false_negatives, "tp:", true_positives
+print "fp:", false_positives
+print "fn:", false_negatives
+print "tp:", true_positives
 precision = true_positives * 1.0 / ( true_positives + false_positives)
 recall = true_positives * 1.0 / ( true_positives + false_negatives)
-print "precision:", precision, "recall:", recall
+print "precision:", precision
+print "recall:", recall
 print "f-measure:", 2 * precision * recall / ( precision + recall)
 
 print "true positives:"
