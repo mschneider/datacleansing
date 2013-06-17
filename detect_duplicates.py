@@ -3,14 +3,48 @@ import csv
 import jellyfish
 import ngram
 import argparse
+import operator
 
 parser = argparse.ArgumentParser()
 parser.add_argument("filename", help="Name of File that get checked for duplicates")
 parser.add_argument("threshold",type=int, help="Threshold value counts as duplicate.")
 parser.add_argument("output", help="Name of Outputfile")
-parser.add_argument("-si", "--similarity",type=int,help="Select Simmilarity Measure used. 1= Jaro Winkler,2=Hamming Distance,3=Damerau Levenshtein", choices=[1,2,3])
+parser.add_argument("-s", "--similarity",type=string,help="Select Simmilarity Measure used. 1= Jaro Winkler,2=Hamming Distance,3=Damerau Levenshtein",default="damreau_levenshtein" , choices=["jaro_winckler","hamming_distance","damreau_levenshtein"])
+parser.add_argument("-m","--mean",type=string, help="Select Mean Calculation", default="arithmetic_mean",choices=["arithmetic_mean","arithmeticWeightedMean","geometricMean","geometricWeightedMean"])
 args = parser.parse_args()
 
+
+
+def arithmeticMean (similarities,weights):
+	return float(sum(similarities))/len(similarities)
+
+def arithmeticWeightedMean (similarities,weights):	
+	weightedSum = 0.0
+	for x,y in zip(similarities,weights):
+		weightedSum+=x*y
+	return weightedSum/sum(weights)
+
+def geometricMean (similarities,weights):
+	reduce(operator.mul,similarities,1.0) ** (1.0/len(similarities))
+
+def geometricWeightedMean (similarities,weights):
+	weightedProduct = 0.0
+	for x,y in zip(similarities,weights):
+		weightedProduct *= x ** y
+	reduce(operator.mul,similarities,1.0) ** (1.0/sum(weights)))
+
+similarity = {
+	"jaro_winckler": lambda a,b: jellyfish.jaro_winkler(a, b),
+	"hamming_distance": lambda a,b:  1.0 - float(jellyfish.hamming_distance(a, b)) / max(len(a), len(b)),
+	"damreau_levenshtein":lambda a,b:  1.0 - float(jellyfish.damerau_levenshtein_distance(a, b)) / max(len(a), len(b)),
+}[args.similarity]
+
+mean = {
+	"arithmetic_mean":arithmeticMean
+	"arithemtic_weighted_mean":arithmeticWeightedMean
+	"geometric_mean":geometricMean
+	"geometric_weighted_mean": geometricWeightedMean
+}[args.mean]
 
 def open_tsv(filename):
 	return csv.reader(open(filename, "r"), delimiter='\t')
@@ -20,6 +54,9 @@ def write_tsv(filename, result):
 	for item in result:
 		output.write("\t".join(map(str,item))+"\n")
 	output.close()
+
+	
+
 
 class Row:
 	def __init__(self, fields):
@@ -45,22 +82,31 @@ class Row:
 				"\tst:" + self.state + "\tsb:" + self.suburb + "\tp:" + self.post + "\ts:" + self.street + \
 				"\ta1:" + self.address1 + "\ta2" + self.address2 + "\tph" + self.phone
 
+
+
+	
+					
 	def compareTo(self, other):
-		return \
-				rateMatchOrNone(self.culture, other.culture) + \
-				rateWhitelisted(self.sex, other.sex, ['m', 'f']) + \
-				rateWhitelisted(self.age, other.age, ['20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38','39','40','41','42','43','44']) + \
-				rateEdit(repairstring(self.birthday,8),repairstring(other.birthday,8)) + \
-				rateMatchOrNone(self.title, other.title) + \
-				rateEdit(self.name, other.name) + \
-				rateEdit(self.surname, other.surname) + \
-				rateMatchOrNone(self.state, other.state) + \
-				rateEdit(self.suburb, other.suburb) + \
-				rateEdit(repairstring(self.post,4),repairstring(other.post,4)) + \
-				rateMatchOrNone(self.street, other.street) + \
-				rateEdit(self.address1, other.address1) + \
-				rateEdit(self.address2, other.address2) + \
-				rateEdit(self.phone, other.phone)
+		
+				similarities=[rateMatchOrNone(self.culture, other.culture), \
+				rateWhitelisted(self.sex, other.sex, ['m', 'f']), \
+				rateWhitelisted(self.age, other.age, ['20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38']), \
+				rateEdit(repairstring(self.birthday,8),repairstring(other.birthday,8)), \
+				rateMatchOrNone(self.title, other.title), \
+				rateEdit(self.name, other.name), \
+				rateEdit(self.surname, other.surname), \
+				rateMatchOrNone(self.state, other.state) , \
+				rateEdit(self.suburb, other.suburb), \
+				rateEdit(repairstring(self.post,4),repairstring(other.post,4)), \
+				rateMatchOrNone(self.street, other.street), \
+				rateEdit(self.address1, other.address1), \
+				rateEdit(self.address2, other.address2), \
+				rateEdit(self.phone, other.phone)]
+				
+				weights = [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+			
+				return mean(similarities,weights)
+						
 def rateMatchOrNone(a, b):
 	ignored = [None, "", "_", " "]
 	a_ignored = a in ignored
@@ -110,14 +156,8 @@ def rateDate(a, b):
 #>> ['$T', 'Te', 'es', 'st', 'te', 'er', 'r$']
 
 def distance(a,b):
-	similaritycalc = {
-	        	1: lambda a,b:  1.0 - float(jellyfish.jaro_winkler(a, b)) / max(len(a), len(b)),
-				2: lambda a,b:  1.0 - float(jellyfish.hamming_distance(a, b)) / max(len(a), len(b)),
-				3:lambda a,b:  1.0 - float(jellyfish.damerau_levenshtein_distance(a, b)) / max(len(a), len(b)),
-				None:lambda a,b:  1.0 - float(jellyfish.damerau_levenshtein_distance(a, b)) / max(len(a), len(b))
-				}
 		
-	return similaritycalc[args.similarity](a,b)
+	return similarityCalc(a,b)
 
 def rateEdit(a, b):
 	ignored = [None, "", "_", " "]
