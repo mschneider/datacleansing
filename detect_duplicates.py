@@ -7,42 +7,42 @@ import operator
 
 parser = argparse.ArgumentParser()
 parser.add_argument("filename", help="Name of File that get checked for duplicates")
-parser.add_argument("threshold",type=int, help="Threshold value counts as duplicate.")
+parser.add_argument("threshold",type=float, help="Threshold value counts as duplicate.")
 parser.add_argument("output", help="Name of Outputfile")
 parser.add_argument("-s", "--similarity",type=str,help="Select Simmilarity Measure used. 1= Jaro Winkler,2=Hamming Distance,3=Damerau Levenshtein",default="damreau_levenshtein" , choices=["jaro_winckler","hamming_distance","damreau_levenshtein"])
-parser.add_argument("-m","--mean",type=str, help="Select Mean Calculation", default="arithmetic_mean",choices=["arithmetic_mean","arithmeticWeightedMean","geometricMean","geometricWeightedMean"])
+parser.add_argument("-m","--mean",type=str, help="Select Mean Calculation", default="arithmetic_mean",choices=["arithmetic_mean","arithemtic_weighted_mean","geometric_mean","geometric_weighted_mean"])
 args = parser.parse_args()
 
-def arithmeticMean (similarities,weights):
-	return float(sum(similarities))/len(similarities)
+def arithmeticMean(similarities, weights):
+	return float(sum(similarities)) / len(similarities)
 
-def arithmeticWeightedMean (similarities,weights):
+def arithmeticWeightedMean(similarities, weights):
 	weightedSum = 0.0
-	for x,y in zip(similarities,weights):
-		weightedSum+=x*y
-	return weightedSum/sum(weights)
+	for x, y in zip(similarities, weights):
+		weightedSum += x * y
+	return weightedSum / sum(weights)
 
-def geometricMean (similarities,weights):
-	return reduce(operator.mul, similarities, 1.0) ** (1.0/len(similarities))
+def geometricMean(similarities, weights):
+	return reduce(operator.mul, similarities) ** (1.0 / len(similarities))
 
-def geometricWeightedMean (similarities,weights):
+def geometricWeightedMean(similarities, weights):
 	weightedProduct = 0.0
-	for x,y in zip(similarities,weights):
+	for x,y in zip(similarities, weights):
 		weightedProduct *= x ** y
-	return reduce(operator.mul, similarities, 1.0) ** (1.0/sum(weights))
+	return weightedProduct ** (1.0 / sum(weights))
 
 similarity = {
-		"jaro_winckler": lambda a,b: jellyfish.jaro_winkler(a, b),
-		"hamming_distance": lambda a,b:  1.0 - float(jellyfish.hamming_distance(a, b)) / max(len(a), len(b)),
-		"damreau_levenshtein":lambda a,b:  1.0 - float(jellyfish.damerau_levenshtein_distance(a, b)) / max(len(a), len(b)),
-		}[args.similarity]
+    "jaro_winckler": lambda a,b: jellyfish.jaro_winkler(a, b),
+    "hamming_distance": lambda a,b:  1.0 - float(jellyfish.hamming_distance(a, b)) / max(len(a), len(b)),
+    "damreau_levenshtein":lambda a,b:  1.0 - float(jellyfish.damerau_levenshtein_distance(a, b)) / max(len(a), len(b)),
+}[args.similarity]
 
 mean = {
-		"arithmetic_mean":arithmeticMean,
-		"arithemtic_weighted_mean":arithmeticWeightedMean,
-		"geometric_mean":geometricMean,
-		"geometric_weighted_mean": geometricWeightedMean
-		}[args.mean]
+	"arithmetic_mean":arithmeticMean,
+	"arithemtic_weighted_mean":arithmeticWeightedMean,
+	"geometric_mean":geometricMean,
+	"geometric_weighted_mean": geometricWeightedMean
+}[args.mean]
 
 def open_tsv(filename):
 	return csv.reader(open(filename, "r"), delimiter='\t')
@@ -92,7 +92,22 @@ class Row:
 			rateEdit(self.address1, other.address1), \
 			rateEdit(self.address2, other.address2), \
 			rateEdit(self.phone, other.phone)]
-		weights = [1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+		# calculated through entropy
+		weights = [
+				2.71362190507,
+				0.991606467856,
+				3.36756458423,
+				9.32860330905,
+				1.42942219466,
+				6.93610674013,
+				9.01046604867,
+				2.14344653528,
+				9.3628288518,
+				7.3685052645,
+				5.11222524931,
+				8.5275890737,
+				4.44927477503,
+				13.182882853]
 		return mean(similarities,weights)
 
 
