@@ -208,7 +208,8 @@ for index, row in enumerate(rows):
 			print str(other)
 			results += [[row.id, other.id]]
 			if len(results) % 1000 == 0:
-				write_tsv(output, results)
+				pass
+				#write_tsv(output, results)
 write_tsv(output, results)
 
 

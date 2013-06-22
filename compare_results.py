@@ -55,21 +55,21 @@ result = DuplicateMatrix(open_tsv(sys.argv[1]))
 print "result | min:", result.minimum, " max:", result.maximum
 gold_standard = DuplicateMatrix(open_tsv(sys.argv[2]))
 print "gold_standard | min:", gold_standard.minimum, " max:", gold_standard.maximum
-false_positives = gold_standard.difference_to(result).count()
-false_negatives = result.difference_to(gold_standard).count()
-true_positives = result.intersect(gold_standard).count()
-print "fp:", false_positives
-print "fn:", false_negatives
-print "tp:", true_positives
-precision = true_positives * 1.0 / ( true_positives + false_positives)
-recall = true_positives * 1.0 / ( true_positives + false_negatives)
+false_positives = gold_standard.difference_to(result)
+false_negatives = result.difference_to(gold_standard)
+true_positives = result.intersect(gold_standard)
+print "fp:", false_positives.count()
+print "fn:", false_negatives.count()
+print "tp:", true_positives.count()
+precision = true_positives.count() * 1.0 / ( true_positives.count() + false_positives.count())
+recall = true_positives.count() * 1.0 / ( true_positives.count() + false_negatives.count())
 print "precision:", precision
 print "recall:", recall
 print "f-measure:", 2 * precision * recall / ( precision + recall)
 
-print "true positives:"
-for row in result.intersect(gold_standard).matrix.keys():
-	for column in result.intersect(gold_standard).matrix[row]:
+print "false positives:"
+for row in false_positives.matrix.keys():
+	for column in false_positives.matrix[row]:
 		print row, "<->", column
 
 
