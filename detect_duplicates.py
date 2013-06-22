@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("filename", help="Name of File that get checked for duplicates")
 parser.add_argument("threshold",type=float, help="Threshold value counts as duplicate.")
 parser.add_argument("output", help="Name of Outputfile")
-parser.add_argument("-s", "--similarity",type=str,help="Select Simmilarity Measure used.",default="damreau_levenshtein" , choices=["jaro_winckler","hamming_distance","damreau_levenshtein","dice"])
+parser.add_argument("-s", "--similarity",type=str,help="Select Simmilarity Measure used.",default="damreau_levenshtein" , choices=["jaro_winckler","hamming_distance","damreau_levenshtein","dice", "jaccard"])
 parser.add_argument("-m","--mean",type=str, help="Select Mean Calculation", default="arithmetic_mean",choices=["arithmetic_mean","arithemtic_weighted_mean","geometric_mean","geometric_weighted_mean"])
 args = parser.parse_args()
 
@@ -38,12 +38,19 @@ def dice(a,b):
 	overlap = len(a & b)
 	return overlap * 2.0/(len(a) + len(b))
 
+def jaccard(a, b):
+	ng=ngram.NGram(pad_len=1,N=2)
+	a = set(ng.ngrams(ng.pad(a)))
+	b = set(ng.ngrams(ng.pad(b)))
+	return len(a & b) * 1.0 / len(a | b)
+
 
 similarity = {
-    "jaro_winckler": lambda a,b: jellyfish.jaro_winkler(a, b),
-    "hamming_distance": lambda a,b:  1.0 - float(jellyfish.hamming_distance(a, b)) / max(len(a), len(b)),
-    "damreau_levenshtein":lambda a,b:  1.0 - float(jellyfish.damerau_levenshtein_distance(a, b)) / max(len(a), len(b)),
-    "dice":lambda a,b: dice(a,b)
+	"jaro_winckler": lambda a,b: jellyfish.jaro_winkler(a, b),
+	"hamming_distance": lambda a,b:  1.0 - float(jellyfish.hamming_distance(a, b)) / max(len(a), len(b)),
+	"damreau_levenshtein":lambda a,b:  1.0 - float(jellyfish.damerau_levenshtein_distance(a, b)) / max(len(a), len(b)),
+	"dice":dice,
+	"jaccard":jaccard
 }[args.similarity]
 
 mean = {
