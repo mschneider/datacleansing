@@ -9,7 +9,7 @@ tpa = true_positives(a)
 tpb = true_positives(b)
 
 print_comparison = lambda do |(x, y)|
-  puts `ruby compare.rb #{x} #{y}`
+  puts `PATH=/usr/local/bin:$PATH python detect_duplicates.py addresses.tsv 0.95 test -d #{x},#{y}`
 end
 
 puts "> in both results"

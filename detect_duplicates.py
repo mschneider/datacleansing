@@ -11,6 +11,7 @@ parser.add_argument("threshold",type=float, help="Threshold value counts as dupl
 parser.add_argument("output", help="Name of Outputfile")
 parser.add_argument("-s", "--similarity",type=str,help="Select Simmilarity Measure used.",default="damreau_levenshtein" , choices=["jaro_winckler","hamming_distance","damreau_levenshtein","dice", "jaccard"])
 parser.add_argument("-m","--mean",type=str, help="Select Mean Calculation", default="arithmetic_mean",choices=["arithmetic_mean","arithemtic_weighted_mean","geometric_mean","geometric_weighted_mean"])
+parser.add_argument("-d","--diff",type=str, help="diff 2 rows")
 args = parser.parse_args()
 
 def arithmeticMean(similarities, weights):
@@ -187,8 +188,21 @@ def rateEdit(a, b):
 
 
 input = args.filename
-
 rows = []
+
+if args.diff != None:
+	a, b = map(int, args.diff.split(','))
+	for index, r in enumerate(open_tsv(input)):
+		if index == a or index == b:
+			rows.append(Row(r))
+		if index > 99999:
+			break
+
+	print rows[0]
+	print rows[1]
+	print rows[0].compareTo(rows[1])
+	exit()
+
 for index, r in enumerate(open_tsv(input)):
 	rows.append(Row(r))
 	if index > 99999:
