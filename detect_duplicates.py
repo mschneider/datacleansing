@@ -211,19 +211,21 @@ for index, r in enumerate(open_tsv(input)):
 threshold = float(args.threshold)
 output = args.output
 results = []
-rows.sort(key = lambda row: row.phone)
-for index, row in enumerate(rows):
-	if index % 1000 == 0:
-		print "" + output + ">", index
-	for other in rows[index+1:index+11]:
-		if row.compareTo(other) > threshold:
-			print "found:", len(results)
-			print str(row)
-			print str(other)
-			results += [[row.id, other.id]]
-			if len(results) % 1000 == 0:
-				pass
-				#write_tsv(output, results)
+columns = [
+	lambda r: r.phone,
+	lambda r: r.suburb,
+	lambda r: r.birthday,
+	lambda r: r.surname,
+	lambda r: r.address1,
+	lambda r: r.name]
+for column in columns:
+	rows.sort(key = column)
+	for index, row in enumerate(rows):
+		if index % 1000 == 0:
+			print "" + output + ">", index
+		for other in rows[index+1:index+11]:
+			if row.compareTo(other) > threshold:
+				results += [[row.id, other.id]]
 write_tsv(output, results)
 
 
