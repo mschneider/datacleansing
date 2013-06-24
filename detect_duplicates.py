@@ -4,14 +4,18 @@ import jellyfish
 import ngram
 import argparse
 import operator
+from collections import defaultdict
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("filename", help="Name of File that get checked for duplicates")
 parser.add_argument("threshold",type=float, help="Threshold value counts as duplicate.")
 parser.add_argument("output", help="Name of Outputfile")
-parser.add_argument("-s", "--similarity",type=str,help="Select Simmilarity Measure used.",default="damreau_levenshtein" , choices=["jaro_winckler","hamming_distance","damreau_levenshtein","dice", "jaccard"])
-parser.add_argument("-m","--mean",type=str, help="Select Mean Calculation", default="arithmetic_mean",choices=["arithmetic_mean","arithemtic_weighted_mean","geometric_mean","geometric_weighted_mean"])
+parser.add_argument("-s", "--similarity",type=str,help="Select Simmilarity Measure used.",default="dice" , choices=["jaro_winckler","hamming_distance","damreau_levenshtein","dice", "jaccard"])
+parser.add_argument("-m","--mean",type=str, help="Select Mean Calculation", default="arithemtic_weighted_mean",choices=["arithmetic_mean","arithemtic_weighted_mean","geometric_mean","geometric_weighted_mean"])
 parser.add_argument("-d","--diff",type=str, help="diff 2 rows")
+parser.add_argument("-w","--window",type=str, help="sliding window")
+parser.add_argument("-c","--column",type=int, help="sort column")
 args = parser.parse_args()
 
 def arithmeticMean(similarities, weights):
@@ -98,13 +102,13 @@ class Row:
 		similarities=[rateMatchOrNone(self.culture, other.culture), \
 			rateWhitelisted(self.sex, other.sex, ['m', 'f']), \
 			rateWhitelisted(self.age, other.age, ['20','21','22','23','24','25','26','27','28','29','30','31','32','33','34','35','36','37','38']), \
-			rateEdit(repairstring(self.birthday,8),repairstring(other.birthday,8)), \
+			rateEdit(self.birthday,other.birthday), \
 			rateMatchOrNone(self.title, other.title), \
-			rateEdit(self.name, other.name), \
-			rateEdit(self.surname, other.surname), \
+			max(rateEdit(self.name, other.name), rateEdit(self.name, other.surname)), \
+			max(rateEdit(self.surname, other.surname), rateEdit(self.surname, other.name)), \
 			rateMatchOrNone(self.state, other.state) , \
 			rateEdit(self.suburb, other.suburb), \
-			rateEdit(repairstring(self.post,4),repairstring(other.post,4)), \
+			rateEdit(self.post,other.post), \
 			rateMatchOrNone(self.street, other.street), \
 			rateEdit(self.address1, other.address1), \
 			rateEdit(self.address2, other.address2), \
@@ -125,6 +129,7 @@ class Row:
 				8.5275890737,
 				4.44927477503,
 				13.182882853]
+
 		return mean(similarities,weights)
 
 
@@ -148,7 +153,10 @@ def rateWhitelisted(a, b, whitelist):
 		else:
 			return 0.0
 	else:
-		return 0.5
+		if a==b:
+			return 1.0
+		else:
+			return 0.5
 
 def repairstring(a,deflen):
 	a=a.strip()
@@ -195,37 +203,62 @@ if args.diff != None:
 	for index, r in enumerate(open_tsv(input)):
 		if index == a or index == b:
 			rows.append(Row(r))
-		if index > 99999:
-			break
+			if len(rows) > 1:
+				break
 
 	print rows[0]
 	print rows[1]
 	print rows[0].compareTo(rows[1])
 	exit()
 
+if args.window != None:
+	column, id, other_id = args.window.split(',')
+	ng=ngram.NGram(pad_len=1,N=8)
+	stopwords = set() # set(ng.ngrams("street")) | set(ng.ngrams("circuit"))
+	ngrams_to_rows = defaultdict(list)
+	value_in_column = eval("lambda r: r."+column)
+	for index, r in enumerate(open_tsv(input)):
+		row = Row(r)
+		rows.append(row)
+		for token in set(ng.ngrams(value_in_column(row))) - stopwords:
+			ngrams_to_rows[token].append(row)
+	candidates = set()
+	for token in set(ng.ngrams(value_in_column(rows[int(id)]))) - stopwords:
+		print token
+		candidates |= set(ngrams_to_rows[token])
+	print len(candidates)
+	for candidate in candidates:
+		if candidate.id == other_id:
+			print other_id, "included"
+
 for index, r in enumerate(open_tsv(input)):
 	rows.append(Row(r))
-	if index > 99999:
-		break
+	#if index >= 100000:
+		#break
+
 
 threshold = float(args.threshold)
 output = args.output
 results = []
 columns = [
-	lambda r: r.phone,
-	lambda r: r.suburb,
-	lambda r: r.birthday,
-	lambda r: r.surname,
-	lambda r: r.address1,
-	lambda r: r.name]
-for column in columns:
-	rows.sort(key = column)
-	for index, row in enumerate(rows):
-		if index % 1000 == 0:
-			print "" + output + ">", index
-		for other in rows[index+1:index+11]:
-			if row.compareTo(other) > threshold:
-				results += [[row.id, other.id]]
+	lambda r: r.phone.replace(" ", ""),
+	lambda r: r.suburb.replace(" ", ""),
+	lambda r: r.birthday.replace(" ",""),
+	lambda r: r.address1.replace(" ",""),
+	lambda r: r.address2.replace(" ",""),
+	lambda r: r.surname.replace(" ",""),
+	lambda r: r.name.replace(" ",""),
+	lambda r: r.post.replace(" ","") + r.address1.replace(" ",""),
+	lambda r: r.culture.replace(" ","") + r.name.replace(" ",""),
+	lambda r: r.culture.replace(" ","") + r.surname.replace(" ","")]
+column = columns[args.column]
+rows.sort(key = column)
+for index, row in enumerate(rows):
+    if index % 1000 == 0:
+        print "" + output + ">", index
+    for other in rows[index+1:index+11]:
+        if row.compareTo(other) > threshold:
+            results += [[row.id, other.id]]
 write_tsv(output, results)
 
 
