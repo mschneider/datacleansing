@@ -24,8 +24,8 @@ class DuplicateMatrix:
 
 	def set(self, row, column):
 		if not row in self.matrix:
-			self.matrix[row] = []
-		self.matrix[row] += [column]
+			self.matrix[row] = set()
+		self.matrix[row].add(column)
 
 	def count(self):
 		result = 0
@@ -67,9 +67,20 @@ print "precision:", precision
 print "recall:", recall
 print "f-measure:", 2 * precision * recall / ( precision + recall)
 
-print "false positives:"
+#for row in result.matrix.keys():
+	#for index, column1 in enumerate(result.matrix[row]):
+		#for column2 in result.matrix[row][index+1:]:
+			#if column1 in result.matrix.keys() and column2 in result.matrix[column1]:
+				#print "trans:", row, column1, column2
+			#elif column2 in result.matrix.keys() and column1 in result.matrix[column2]:
+				#print "trans':", row, column1, column2
+			#else:
+				#print "intrans:", row, column1, column2
+
+exit()
+print "false_positives:"
 for row in false_positives.matrix.keys():
 	for column in false_positives.matrix[row]:
-		print row, "<->", column
+		print str(row)+","+str(column)
 
 
